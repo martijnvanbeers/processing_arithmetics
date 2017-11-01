@@ -140,7 +140,6 @@ class Training(object):
         if 'classifier' in copy_weights:
             W_classifier = model_info['classifiers']
 
-
         input_length = kwargs.get('input_length', model_info['input_length'])
         kwargs.pop('input_length', None)
 
@@ -951,20 +950,19 @@ class DCgates(DiagnosticClassifier):
     Train simple classifiers to predict information from 
     the gates of an already trained model.
     """
-    def __init__(self, digits=np.arange(-10,11), operators=['+', '-'], model=None, classifiers=None):
+    def __init__(self, digits=np.arange(-10,11), operators=['+', '-'], model=None, classifiers=None, copy_weights=['recurrent', 'embeddings', 'classifiers']):
         # run superclass init
-        super(DCgates, self).__init__(digits=digits, operators=operators, model=model, classifiers=classifiers)
+        super(DCgates, self).__init__(digits=digits, operators=operators, model=model, classifiers=classifiers,copy_weights=copy_weights)
 
     def _build(self, W_embeddings, W_recurrent, W_classifier):
         """
         Build model with given embeddings and recurrent weights.
         """
         # fetch adapted recurrent layer
-        self.recurrent_layer = {'GRU':GRU_output_gates}[self.recurrent_name]
+        self.recurrent_layer = {'GRU':GRU_output_gates, 'GRU_output_gates':GRU_output_gates}[self.recurrent_name]
 
         # create input layer
         input_layer = Input(shape=(self.input_length,), dtype='int32', name='input')
-
 
         # create embeddings
         embeddings = Embedding(input_dim=self.input_dim, output_dim=self.input_size,
@@ -989,13 +987,14 @@ class DCgates(DiagnosticClassifier):
         classifiers = []
         for classifier in self.classifiers:
             try:
-                weights = W_classifier[classifier]
+                weights_update = W_classifier[classifier+'_update_gate']
+                weights_reset = W_classifier[classifier+'_reset_gate']
             except KeyError:
-                weights = None
+                weights_update, weights_reset = None, None
             except TypeError:
-                weights = None
-            classifiers.append(TimeDistributed(Dense(1, activation=self.activations[classifier]), weights=weights, name=classifier+'_update_gate')(update_gate))
-            classifiers.append(TimeDistributed(Dense(1, activation=self.activations[classifier]), weights=weights, name=classifier+'_reset_gate')(reset_gate))
+                weights_update, weights_reset = None, None
+            classifiers.append(TimeDistributed(Dense(1, activation=self.activations[classifier]), weights=weights_update, name=classifier+'_update_gate')(update_gate))
+            classifiers.append(TimeDistributed(Dense(1, activation=self.activations[classifier]), weights=weights_reset, name=classifier+'_reset_gate')(reset_gate))
 
         # create model
         self.model = ArithmeticModel(inputs=input_layer, outputs=classifiers, dmap=self.dmap)
@@ -1033,7 +1032,7 @@ class DCgates(DiagnosticClassifier):
             raise ValueError("Class should be initialised with model")
         self.recurrent_name = model_info['recurrent_layer']
         try:
-            self.gates = {'GRU':['update_gate', 'reset_gate']}[self.recurrent_name]
+            self.gates = {'GRU':['update_gate', 'reset_gate'], 'GRU_output_gates':['update_gate', 'reset_gate']}[self.recurrent_name]
         except KeyError:
             raise ValueError("output gates not implemented for %s" % self.recurrent_name)
 

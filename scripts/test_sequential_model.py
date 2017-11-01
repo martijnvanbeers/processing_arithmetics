@@ -29,10 +29,11 @@ parser.add_argument("--seed_test", type=int, help="Set random seed for testset",
 parser.add_argument("-metrics", nargs='*', required=True, help="Add if you want to test metrics other than the default ones. In case of multiple outputs, all metrics will be applied to all outputs")
 
 parser.add_argument("-save_to", help="Save to file name")
+parser.add_argument("--debug", action="store_true", help="debug file")
 
 args = parser.parse_args()
 
-languages_test = [(name, tb) for name, tb in treebank(seed=args.seed_test, kind='test')]
+languages_test = [(name, tb) for name, tb in treebank(seed=args.seed_test, kind='test', debug=True)]
 digits = np.arange(-10, 11)
 operators = ['+', '-']
 test_data = None

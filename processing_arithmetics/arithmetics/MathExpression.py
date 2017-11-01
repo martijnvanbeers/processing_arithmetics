@@ -683,11 +683,11 @@ class MathExpression(Tree):
         if 'minus1depth_count' in classifiers:
             self.targets['minus1depth_count'] = [[val] for val in self.get_minus_depths(1, True)]
 
-        self.training_targets = copy.deepcopy(self.targets)
-        numerical = np.concatenate([np.array([[0]]), self.get_digit_positions(self.symbols)[:-1]], axis=0)
-        for target in self.targets:
-            if target == 'intermediate_locally' or target == 'intermediate_recursively':
-                self.training_targets[target] = numerical*self.targets[target]
+        # self.training_targets = copy.deepcopy(self.targets)
+        # numerical = np.concatenate([np.array([[0]]), self.get_digit_positions(self.symbols)[:-1]], axis=0)
+        # for target in self.targets:
+        #     if target == 'intermediate_locally' or target == 'intermediate_recursively':
+        #         self.training_targets[target] = numerical*self.targets[target]
 
     def get_digit_positions(self, symbols):
         """

@@ -3,7 +3,7 @@ import argparse
 import pickle
 import re
 import numpy as np
-from processing_arithmetics.sequential.architectures import DiagnosticClassifier
+from processing_arithmetics.sequential.architectures import DiagnosticClassifier, DCgates
 from processing_arithmetics.arithmetics.treebanks import treebank
 from argument_transformation import max_length
 
@@ -21,7 +21,8 @@ operators = ['+', '-']
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-models", type=str, nargs="*", help="Models to test")
-parser.add_argument("-classifiers", required=True, nargs="*", choices=['subtracting', 'intermediate_locally', 'intermediate_recursively', 'grammatical', 'intermediate_directly', 'depth', 'minus1depth', 'minus2depth', 'minus3depth', 'minus4depth', 'minus1depth_count'])
+parser.add_argument("--test_gates", action="store_true", help="Run diagnostic classifier on gates instead of hidden layer activations")
+parser.add_argument("-classifiers", required=True, nargs="*", choices=['subtracting', 'intermediate_locally', 'intermediate_recursively', 'grammatical', 'intermediate_directly', 'depth', 'minus1depth', 'minus2depth', 'minus3depth', 'minus4depth', 'minus1depth_count', 'minus1depth_update_gate', 'minus1depth_reset_gate'])
 
 parser.add_argument("--format", type=str, help="Set formatting of arithmetic expressions", choices=['infix', 'postfix', 'prefix'], default="infix")
 parser.add_argument("--seed_test", type=int, help="Set random seed for testset", default=100)
@@ -35,7 +36,7 @@ args = parser.parse_args()
 
 ####################################################
 # Set some params
-languages_test              = [(name, tb) for name, tb in treebank(seed=args.seed_test, kind='test')]
+languages_test              = [(name, tb) for name, tb in treebank(seed=args.seed_test, kind='test', debug=args.debug)]
 
 results_all = {}
 
@@ -43,9 +44,16 @@ training_data = None
 validation_data = None
 test_data = None
 
+if args.test_gates:
+    DC = DCgates
+else:
+    DC = DiagnosticClassifier
+
 for model in args.models:
 
-    m = DiagnosticClassifier(model=model, classifiers=args.classifiers, copy_weights=['recurrent', 'embeddings', 'classifier'])
+    print model
+
+    m = DC(model=model, classifiers=args.classifiers, copy_weights=['recurrent', 'embeddings', 'classifier'])
 
     # find format (for now assume it is in the title) and assure it is right
     format = re.search('postfix|prefix|infix', model).group(0)
