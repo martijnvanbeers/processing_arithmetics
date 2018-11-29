@@ -22,5 +22,5 @@ WORKDIR /app
 
 COPY keras.json /root/.keras/
 
-CMD ["/usr/local/bin/gunicorn", "-w 2",  "--bind=0.0.0.0", "--timeout=600", "pa_demo.main:app"]
+CMD ["/usr/local/bin/gunicorn", "-w 2",  "-e SCRIPT_NAME=/arithmetics", "--bind=0.0.0.0", "--timeout=600", "pa_demo.main:app"]
 
